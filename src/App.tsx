@@ -1,43 +1,43 @@
-import { useState, ChangeEvent } from "react";
+import React, { useState, ChangeEvent } from "react";
 
 function App() {
-  const [imageSrc, setImageSrc] = useState<string | null>(null);
+  const [imagesSrc, setImagesSrc] = useState<string[]>([]);
 
   const handleImageChange = (
-    event: DragEvent | ChangeEvent<HTMLInputElement>
+    event: React.DragEvent<HTMLDivElement> | ChangeEvent<HTMLInputElement>
   ) => {
     const files =
       event.type === "drop"
-        ? (event as DragEvent).dataTransfer?.files
+        ? (event as React.DragEvent<HTMLDivElement>).dataTransfer?.files
         : (event as ChangeEvent<HTMLInputElement>).target.files;
-    const file = files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e: ProgressEvent<FileReader>) => {
-        setImageSrc(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+    if (files) {
+      const newImages: string[] = [];
+      Array.from(files).forEach((file) => {
+        const reader = new FileReader();
+        reader.onload = (e: ProgressEvent<FileReader>) => {
+          if (e.target?.result) {
+            newImages.push(e.target.result as string);
+            if (newImages.length === files.length) {
+              setImagesSrc((prev) => [...prev, ...newImages]);
+            }
+          }
+        };
+        reader.readAsDataURL(file);
+      });
     }
   };
 
-  const handleDragOver = (event: DragEvent) => {
-    event.preventDefault(); // 防止瀏覽器預設處理拖曳行為 (比如一些不希望的檔案拖放行為)
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault(); // 防止瀏覽器預設處理拖曳行為
   };
 
-  const handleDrop = (event: DragEvent) => {
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault(); // 防止瀏覽器預設處理拖曳行為
     handleImageChange(event);
   };
 
-  const Hello = (person: string) => {
-    return "Hello, " + person;
-  };
-  const name = "123";
-  console.log(Hello(name));
-
   return (
     <>
-      <p className="text-red-500">Hello</p>
       <div
         onDragOver={handleDragOver}
         onDrop={handleDrop}
@@ -50,13 +50,16 @@ function App() {
       >
         拖曳圖片到這裡或者點擊選擇檔案
       </div>
-      {imageSrc && (
-        <img
-          src={imageSrc}
-          alt="Uploaded"
-          style={{ maxWidth: "100%", maxHeight: "400px" }}
-        />
-      )}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+        {imagesSrc.map((src, index) => (
+          <img
+            key={index}
+            src={src}
+            alt={`Uploaded ${index}`}
+            style={{ maxWidth: "100%", maxHeight: "200px" }}
+          />
+        ))}
+      </div>
     </>
   );
 }
